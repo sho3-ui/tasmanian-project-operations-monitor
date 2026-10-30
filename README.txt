@@ -1,0 +1,24 @@
+予約業務システム：Gmail送信権限に依存しない外部監視
+
+公開されている /readyz を匿名で読むだけです。予約・メール・清掃・LINE・収支を操作しません。
+HTTP200/ready:true だけでは正常とせず、operationReasons に取込失効・接続断・送信異常等があれば、管理者sho3-ui宛にGitHub Issueを1件作成・割当します。
+同じ異常コードが続く間は繰り返し通知せず、追加の異常コードが出た時だけ1回追記し、解消を確認した時に1回コメントして閉じます。
+Gmail API認可が失効しても、GitHubの通知はこの認可を使いません。スタッフLINEの無料通数も使いません。
+管理者側のGitHubメール・モバイル通知設定が有効である必要があります。GitHub上の作成・割当と、端末での受信は別途確認します。
+
+既存GitHubアカウントのpublic repository、標準ubuntu runnerを利用する無料の構成です。新しい有料サービス・認証キー・Google権限は使いません。
+scheduleは10分おきの設定ですが、GitHub側の混雑・障害による遅延や欠落はあり得ます。即時通知や24時間無停止を保証しません。
+日次の短いheartbeat記録を同じrepositoryに残します。60日無活動によるschedule停止が起きていないかも運用で確認します。通知設定・監視自体も納品後の運用確認対象です。
+
+テスト：node --test monitor.test.mjs（外部通信なし）。
+ローカルの node monitor.mjs は匿名の状態確認のみで、GitHubへの書込はしません。
+GitHub Actions内の正確なrepositoryでだけ、既定のrepository専用tokenを使ってIssueと日次heartbeatを書きます。
+顧客情報・資格情報を出力しません。応答本文や任意の文字列を公開Issueへ転記しません。
+
+一時的な通信エラーは30秒後に再確認し、解消していればIssueを作りません。失効等の明確な異常はそのまま通知対象にします。
+Issueは作成後にロックし、外部の任意コメントで通知や復旧処理が妨げられないようにします。
+監視プログラム自体のエラーはGitHub Actionsの失敗通知で管理者が把握するため、最後にscheduleを変更した管理者アカウントのActions失敗通知を有効にしてください。Issue通知とは別設定です。
+
+導入時にoperations-watchラベルを先に作成し、その存在とIssueへの付与を確認します。無ければIssueを増やさずActionsを失敗させます。
+毎週土曜に管理者がActionsタブでwatchのdisabled表示がないことと、data/heartbeat.jsonのdateが前日以降であることを確認します。古ければActionsのBooking operations monitorからRun workflowを1回実行して記録を確認し、停止原因を調査します。workflowが無効なら本人権限で有効化します。
+復旧も30秒間隔で2回正常を確認してから閉じます。
